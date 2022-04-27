@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 void main() {
   runApp(const MaterialApp(
     home: Home(),
+    debugShowCheckedModeBanner: false,
   ));
 }
 
@@ -18,6 +19,7 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   List<String> foxImages = [];
+  bool loadingType = true;
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -44,13 +46,27 @@ class _HomeState extends State<Home> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Infinite Scroll Demo'),
+        actions: [
+          IconButton(
+            onPressed: () {
+              setState(() {
+                foxImages.clear();
+                loadingType = !loadingType;
+                fetchFive();
+              });
+            },
+            icon: const Icon(Icons.change_circle_outlined),
+          )
+        ],
       ),
+      backgroundColor: const Color.fromARGB(255, 226, 233, 238),
       body: ListView.builder(
           controller: _scrollController,
           itemCount: foxImages.length,
           itemBuilder: (BuildContext context, index) {
             return SimpleFox(
               foxImage: foxImages[index],
+              loadingType: loadingType,
             );
           }),
     );
@@ -73,53 +89,88 @@ class _HomeState extends State<Home> {
 }
 
 class SimpleFox extends StatelessWidget {
-  const SimpleFox({Key? key, required this.foxImage}) : super(key: key);
+  const SimpleFox({Key? key, required this.foxImage, required this.loadingType})
+      : super(key: key);
 
+  final bool loadingType;
   final String foxImage;
+
+  final double _cardRadius = 8.0;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: (() {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: GestureDetector(
+        onTap: (() {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
               builder: (context) => FoxDetail(
-                    foxImage: foxImage,
-                  )),
-        );
-      }),
-      child: Hero(
-        tag: foxImage,
-        child: Image.network(
-          foxImage,
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) {
-              return child;
-            }
-
-            int? _totalBytes = loadingProgress.expectedTotalBytes;
-            double? _downloadProgress;
-            if (_totalBytes != null) {
-              _downloadProgress =
-                  (((loadingProgress.cumulativeBytesLoaded * 100) /
-                              _totalBytes) /
-                          100)
-                      .toDouble();
-            }
-
-            return SizedBox(
-              height: 150,
-              child: Center(
-                child: LinearProgressIndicator(value: _downloadProgress),
+                foxImage: foxImage,
               ),
-            );
-          },
-          height: 150,
-          fit: BoxFit.fitWidth,
+            ),
+          );
+        }),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(_cardRadius),
+            boxShadow: const [
+              BoxShadow(
+                color: Color.fromARGB(255, 211, 223, 238),
+                spreadRadius: 0,
+                blurRadius: 0,
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(_cardRadius),
+            child: Hero(
+              tag: foxImage,
+              child: Image.network(
+                foxImage,
+                height: 150,
+                fit: BoxFit.fitWidth,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) {
+                    return child;
+                  }
+
+                  int? _totalBytes = loadingProgress.expectedTotalBytes;
+                  double? _downloadProgress;
+
+                  if (_totalBytes != null) {
+                    _downloadProgress =
+                        (((loadingProgress.cumulativeBytesLoaded * 100) /
+                                    _totalBytes) /
+                                100)
+                            .toDouble();
+                  }
+
+                  return SizedBox(
+                    height: 150,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Center(
+                        child: _returnLoading(_downloadProgress),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
         ),
       ),
     );
+  }
+
+  Widget _returnLoading(double? _downloadProgress) {
+    if (loadingType) {
+      return const RefreshProgressIndicator();
+    } else {
+      return LinearProgressIndicator(value: _downloadProgress);
+    }
   }
 }
 
@@ -131,6 +182,7 @@ class FoxDetail extends StatelessWidget {
     return Hero(
       tag: foxImage,
       child: Scaffold(
+        backgroundColor: const Color.fromARGB(255, 226, 233, 238),
         appBar: AppBar(
           title: const Text('Detailed Fox Page'),
         ),
@@ -153,7 +205,7 @@ class FoxDetail extends StatelessWidget {
                   child: Container(
                     decoration: const BoxDecoration(
                       border: Border(
-                        top: BorderSide(width: 2),
+                        top: BorderSide(width: 3),
                       ),
                     ),
                     child: Padding(
