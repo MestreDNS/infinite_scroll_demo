@@ -19,18 +19,21 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   List<String> foxImages = [];
-  bool loadingType = true;
   final ScrollController _scrollController = ScrollController();
+
+  //this boolean changes the loading animation
+  bool loadingType = true;
 
   @override
   void initState() {
     super.initState();
-    fetchFive();
+    fetchTen();
 
+    //this listener detects end of screen and fetch more images
     _scrollController.addListener(() {
       if (_scrollController.position.pixels ==
           _scrollController.position.maxScrollExtent) {
-        fetchFive();
+        fetchTen();
       }
     });
   }
@@ -52,7 +55,7 @@ class _HomeState extends State<Home> {
               setState(() {
                 foxImages.clear();
                 loadingType = !loadingType;
-                fetchFive();
+                fetchTen();
               });
             },
             icon: const Icon(Icons.change_circle_outlined),
@@ -72,6 +75,7 @@ class _HomeState extends State<Home> {
     );
   }
 
+  //this function fetch one image from databank
   fetch() async {
     final response = await http.get(Uri.parse('https://randomfox.ca/floof/'));
     if (response.statusCode == 200) {
@@ -81,8 +85,9 @@ class _HomeState extends State<Home> {
     }
   }
 
-  fetchFive() {
-    for (int i = 0; i < 5; i++) {
+  //this function call fetch function ten times
+  fetchTen() {
+    for (int i = 0; i < 10; i++) {
       fetch();
     }
   }
@@ -165,6 +170,7 @@ class SimpleFox extends StatelessWidget {
     );
   }
 
+  //loading widget
   Widget _returnLoading(double? _downloadProgress) {
     if (loadingType) {
       return const RefreshProgressIndicator();
